@@ -23,8 +23,8 @@ import torch.utils.data
 import torch.utils.data.distributed
 import torchvision.transforms as transforms
 
-import pyximport
-pyximport.install()
+# import pyximport
+# pyximport.install()
 
 import _init_paths
 from config import cfg
@@ -129,11 +129,12 @@ def main():
     # switch to evaluate mode
     model.eval()
 
-    count_warm_up = 1
-    count_actual = 10
+    count_warm_up = 10
+    count_actual = 1000
 
     # ----------------------------------
     in_img = torch.zeros((1, 3, 192, 256), dtype=torch.float32)
+    print('Profiling warm-up time for {:d} iterations.'.format(count_warm_up))
     start_time = time.time()
     with torch.no_grad():
         for i in range(count_warm_up):
@@ -142,26 +143,28 @@ def main():
 
     # ----------------------------------
     in_img = torch.zeros((1, 3, 192, 256), dtype=torch.float32)
+    print('Profiling actual time for {:d} iterations.'.format(count_actual))
     start_time = time.time()
     with torch.no_grad():
-        outputs = model(in_img)
+        for i in range(count_actual):
+            outputs = model(in_img)
 
-        # if isinstance(outputs, list):
-        #     output = outputs[-1]
-        # else:
-        #     output = outputs
+            # if isinstance(outputs, list):
+            #     output = outputs[-1]
+            # else:
+            #     output = outputs
 
-        # preds, maxvals = get_final_preds(config, output.clone().cpu().numpy(), c, s)
-        #
-        # all_preds = np.zeros((config.MODEL.NUM_JOINTS, 3), dtype=np.float32)
-        # all_boxes = np.zeros(6)
-        # all_preds[ :, 0:2] = preds[:, :, 0:2]
-        # all_preds[ :, 2:3] = maxvals
-        # # double check this all_boxes parts
-        # all_boxes[0:2] = c[:, 0:2]
-        # all_boxes[2:4] = s[:, 0:2]
-        # all_boxes[4] = np.prod(s*200, 1)
-        # all_boxes[5] = score
+            # preds, maxvals = get_final_preds(config, output.clone().cpu().numpy(), c, s)
+            #
+            # all_preds = np.zeros((config.MODEL.NUM_JOINTS, 3), dtype=np.float32)
+            # all_boxes = np.zeros(6)
+            # all_preds[ :, 0:2] = preds[:, :, 0:2]
+            # all_preds[ :, 2:3] = maxvals
+            # # double check this all_boxes parts
+            # all_boxes[0:2] = c[:, 0:2]
+            # all_boxes[2:4] = s[:, 0:2]
+            # all_boxes[4] = np.prod(s*200, 1)
+            # all_boxes[5] = score
 
     print('Time: {:.0f}ms'.format(1000 * (time.time() - start_time) / count_actual))
 
