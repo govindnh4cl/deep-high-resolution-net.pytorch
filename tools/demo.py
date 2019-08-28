@@ -15,6 +15,7 @@ import pprint
 import logging
 import time
 import numpy as np
+from PIL import Image
 
 import torch
 import torch.nn.parallel
@@ -126,17 +127,28 @@ def main():
     # validate(cfg, valid_loader, valid_dataset, model, criterion,
     #          final_output_dir, tb_log_dir)
 
+    count_warm_up = 10
+    count_actual = 50
+    batch_size = 3
+
+    #in_img = torch.zeros((batch_size, 3, 192, 256), dtype=torch.float32)
+    in_img = Image.open('test_data/4_yoga.jpg')
+    
+    # Normalization
+    wd, ht = 256, 192
+    in_img = in_img.resize((wd, ht))
+    in_img = np.moveaxis(np.array(in_img), -1, 0)  # Convert to channels-first
+    in_img = (in_img.astype(np.float32)/255 - np.array([0.485, 0.456, 0.406]).reshape(3, 1, 1)) / np.array([0.229, 0.224, 0.225]).reshape(3, 1, 1)
+    in_img = in_img[np.newaxis, :]  # Add new axis for batch
+    in_img = np.concatenate([in_img] * batch_size)  # Create a batch
+    
+    print('Batch shape: {:}'.format(in_img.shape))
+    in_img = torch.Tensor(in_img)
 
     # switch to evaluate mode
     model.eval()
 
-    count_warm_up = 10
-    count_actual = 50
-    batch_size = 4
-
     # ----------------------------------
-    in_img = torch.zeros((batch_size, 3, 192, 256), dtype=torch.float32)
-
     start_time = time.time()
     with torch.no_grad():
         for i in range(count_warm_up):
@@ -144,7 +156,6 @@ def main():
         print('Time at warm up: {:.0f}ms'.format(1000 * (time.time() - start_time)/(count_warm_up * batch_size)))
 
     # ----------------------------------
-    in_img = torch.zeros((batch_size, 3, 192, 256), dtype=torch.float32)
     start_time = time.time()
     with torch.no_grad():
         for i in range(count_actual):
