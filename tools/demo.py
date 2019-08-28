@@ -24,8 +24,8 @@ import torch.utils.data
 import torch.utils.data.distributed
 import torchvision.transforms as transforms
 
-import pyximport
-pyximport.install()
+# import pyximport
+# pyximport.install()
 
 import _init_paths
 from config import cfg
