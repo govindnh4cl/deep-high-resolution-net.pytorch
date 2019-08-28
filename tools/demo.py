@@ -14,6 +14,7 @@ import os
 import pprint
 import logging
 import time
+import numpy as np
 
 import torch
 import torch.nn.parallel
@@ -103,6 +104,9 @@ def main():
     normalize = transforms.Normalize(
         mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
     )
+
+    data_transforms = transforms.Compose([transforms.ToTensor(), normalize])
+
     # valid_dataset = eval('dataset.'+cfg.DATASET.DATASET)(
     #     cfg, cfg.DATASET.ROOT, cfg.DATASET.TEST_SET, False,
     #     transforms.Compose([
@@ -129,41 +133,43 @@ def main():
     # switch to evaluate mode
     model.eval()
 
-    count_warm_up = 1
-    count_actual = 10
+    count_warm_up = 10
+    count_actual = 50
+    batch_size = 4
 
     # ----------------------------------
-    in_img = torch.zeros((1, 3, 192, 256), dtype=torch.float32)
+    in_img = torch.zeros((batch_size, 3, 192, 256), dtype=torch.float32)
     start_time = time.time()
     with torch.no_grad():
         for i in range(count_warm_up):
             outputs = model(in_img)
-    print('Time at warm up: {:.0f}ms'.format(1000 * (time.time() - start_time)/count_warm_up))
+        print('Time at warm up: {:.0f}ms'.format(1000 * (time.time() - start_time)/(count_warm_up * batch_size)))
 
     # ----------------------------------
-    in_img = torch.zeros((1, 3, 192, 256), dtype=torch.float32)
+    in_img = torch.zeros((batch_size, 3, 192, 256), dtype=torch.float32)
     start_time = time.time()
     with torch.no_grad():
-        outputs = model(in_img)
+        for i in range(count_actual):
+            outputs = model(in_img)
 
-        # if isinstance(outputs, list):
-        #     output = outputs[-1]
-        # else:
-        #     output = outputs
+            # if isinstance(outputs, list):
+            #     output = outputs[-1]
+            # else:
+            #     output = outputs
 
-        # preds, maxvals = get_final_preds(config, output.clone().cpu().numpy(), c, s)
-        #
-        # all_preds = np.zeros((config.MODEL.NUM_JOINTS, 3), dtype=np.float32)
-        # all_boxes = np.zeros(6)
-        # all_preds[ :, 0:2] = preds[:, :, 0:2]
-        # all_preds[ :, 2:3] = maxvals
-        # # double check this all_boxes parts
-        # all_boxes[0:2] = c[:, 0:2]
-        # all_boxes[2:4] = s[:, 0:2]
-        # all_boxes[4] = np.prod(s*200, 1)
-        # all_boxes[5] = score
+            # preds, maxvals = get_final_preds(config, output.clone().cpu().numpy(), c, s)
+            #
+            # all_preds = np.zeros((config.MODEL.NUM_JOINTS, 3), dtype=np.float32)
+            # all_boxes = np.zeros(6)
+            # all_preds[ :, 0:2] = preds[:, :, 0:2]
+            # all_preds[ :, 2:3] = maxvals
+            # # double check this all_boxes parts
+            # all_boxes[0:2] = c[:, 0:2]
+            # all_boxes[2:4] = s[:, 0:2]
+            # all_boxes[4] = np.prod(s*200, 1)
+            # all_boxes[5] = score
 
-    print('Time: {:.0f}ms'.format(1000 * (time.time() - start_time) / count_actual))
+        print('Time: {:.0f}ms'.format(1000 * (time.time() - start_time) / (count_actual * batch_size)))
 
 
 if __name__ == '__main__':
