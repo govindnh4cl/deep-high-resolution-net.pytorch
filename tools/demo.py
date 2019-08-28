@@ -127,9 +127,6 @@ def main():
     #          final_output_dir, tb_log_dir)
 
 
-
-
-
     # switch to evaluate mode
     model.eval()
 
@@ -139,6 +136,7 @@ def main():
 
     # ----------------------------------
     in_img = torch.zeros((batch_size, 3, 192, 256), dtype=torch.float32)
+
     start_time = time.time()
     with torch.no_grad():
         for i in range(count_warm_up):
